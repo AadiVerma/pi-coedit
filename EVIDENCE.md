@@ -83,3 +83,33 @@
 ## Stop point
 
 Everything through step 8 is committed on `main` locally. Per the task constraints, the following await the owner's explicit OK (see final report): creating the GitHub repo, `git push`, `npm publish`, `vsce`/`ovsx publish`, runtime dependencies (none were added), hooks outside fixture repos (none installed).
+
+## QA cycle (test-driven hardening, post-step-8)
+
+Approach in docs/QA-PLAN.md: 8 user flows, a permutation matrix, and property/fuzz testing with seeded RNGs.
+
+### Suites added (114 test blocks, >7,400 generated+matrix cases per `npm run check`)
+
+- core fuzz (7,000 cases): diff round-trip I1 (3,000 random content pairs incl. CRLF/unicode/repeats), attribution replay invariants I2/I3/I4 (3,000 random event sequences: line-count, origin validity, inferred-path safety), edge-hunk cases I5 (1,000).
+- core edge cases (25): 32-writer × 25-event concurrency, garbage/truncated state, stale-ts locks, same-process lock timeout, blob eviction, multi-worktree filtering, weird filenames (spaces/unicode/emoji/deep/leading-dash), broken+good symlinks, binary NUL placement, delete+recreate-not-rename, empty repo, dirty-vs-HEAD seeding, partial commits, HEAD-change resync, guard data (newline-only/evicted/CRLF), ignored files, file↔directory swaps, newline matrix.
+- pi-coedit scenarios (11): **64-case overwrite-guard matrix** (policy × UI × read-state × staleness), human-edit-once notes, bash-window attribution, editor-in-window reclassification, re-read disarming, /whose, /coedit reset (confirm + decline), footer counts, non-repo cwd, concurrent per-file attribution, prompt-excerpt cap.
+- gutter revert-core (11): overlap-safe revert incl. human-context drift, evictions, conflicts, ranges, CRLF, plus a 300-case random event-chain fuzz.
+- bisect edge (6): 0/1/2-snapshot paths, non-monotonic predicates, parseTimeout matrix, delete-recreate revert, missing-file conflicts.
+- ledger edge (4): timezone-offset window matrix (+05:30/−08:00/Z), torn usage files, multi-session aggregation/rounding, malformed notes.
+
+### Product bugs found and fixed
+
+1. **UTF-8 paths mangled** — `git ls-files -z` output decoded as latin1, so unicode filenames never entered snapshots; now byte-restored and UTF-8-decoded (also `diff --name-only -z`).
+2. **`humanChangesSince` lied on newline-only changes** — `changed` was hunks-based; a trailing-newline-only edit (hash differs, zero hunks) reported `changed:false`, disarming the overwrite guard. Now hash-based: any content difference counts.
+3. **Stale attribution after HEAD moves** — checkout/reset mid-session left event chains describing a discarded state; new `Coedit.resync()` keeps chains that still match the worktree and re-seeds the rest against the new HEAD.
+4. **Editor-reported human change inside an agent bash window was labelled `human`** — now reclassified `unknown` (grey) via a reclassification event; `classifyChange` is the single decision point.
+5. **`classifyChange` called with the wrong parameter name** (`editorSeen` vs `editorSeenHuman`) — silently made every in-window decision "agent"; caught by the 64-case matrix, would have been caught by tsc (process gap closed: typecheck runs in the loop).
+6. **Config was frozen at session start** — `Store.config` now re-reads state.json per access, so policy edits from another session/the gutter take effect immediately.
+7. **fs.watch startup window dropped early writes** — turn boundary is now anchored at session start, so the first `turn_start` diff records anything the watcher backend missed.
+8. **Gutter revert could misplace edits when agent hunks overlapped** — replaced per-hunk WorkspaceEdit math with the pure, content-anchored `computeAgentRevert` (whole-document atomic apply, conflicts reported, human lines preserved).
+
+### Verification after fixes
+
+- `npm run check` green: registry, typecheck, **114/114 tests** (>7,400 executed cases).
+- All four demos re-run green after the changes (edit, stale-edit, bisect, ledger).
+- Model limit documented (trailing empty line vs final newline) in packages/core/README.md; generator excludes the unrepresentable case.

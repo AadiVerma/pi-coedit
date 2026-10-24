@@ -54,6 +54,16 @@ function applyHunksToLines(lines: AttributedLine[], hunks: Hunk[], ev: CoeditEve
 export class AttributionEngine {
 	private files = new Map<string, FileState>();
 
+	/** Drop all state (used when the baseline HEAD changes under us). */
+	reset(): void {
+		this.files.clear();
+	}
+
+	/** Drop one file's state (its recorded chain no longer matches the worktree). */
+	resetFile(file: string): void {
+		this.files.delete(file);
+	}
+
 	/** Rebuild state by replaying events in order (store order is append order). */
 	replay(events: CoeditEvent[]): void {
 		this.files.clear();

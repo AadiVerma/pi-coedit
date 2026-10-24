@@ -18,6 +18,7 @@ export * from "./git.ts";
 export { buildGitAiNote, gitAiHumanKey, gitAiSessionId, gitAiTraceId, parseGitAiNote, renderGitAiNote, GIT_AI_NOTES_REF } from "./gitai.ts";
 export { diffSnapshots, emptySnapshot, readFileStat, readContent, takeSnapshot } from "./snapshot.ts";
 export { contentHash, excerpt, newId, splitLines } from "./util.ts";
+export { isBinary } from "./util.ts";
 
 /**
  * The public facade. Open once per session:
@@ -53,6 +54,26 @@ export class Coedit {
 
 	get config(): CoeditConfig {
 		return this.store.config;
+	}
+
+	/**
+	 * Re-baseline after the worktree's HEAD moved (checkout/reset/pull). Files whose
+	 * recorded event chain still matches the worktree keep their attribution; every
+	 * other tracked file is re-seeded against the NEW head (dirty lines -> unknown).
+	 */
+	async resync(): Promise<void> {
+		this.headSha = await headCommit(this.worktree);
+		for (const file of this.engine.filesTracked()) {
+			const cur = readContent(this.worktree, file);
+			const events = this.store.events({ worktree: this.worktree, file });
+			const chainEnd = events[events.length - 1]?.afterHash ?? null;
+			const stillCurrent = cur !== null && chainEnd !== null && chainEnd === contentHash(cur);
+			if (!stillCurrent) this.engine.resetFile(file);
+		}
+		const dirty = await dirtyVsHead(this.worktree);
+		for (const file of dirty) {
+			if (!this.engine.has(file)) await this.seedFileState(file);
+		}
 	}
 
 	/** Initial baseline: replay past events, seed never-observed files from HEAD. */
@@ -195,10 +216,12 @@ export class Coedit {
 		const cur = readContent(this.worktree, file);
 		if (cur === null) return null;
 		if (contentHash(cur) === hash) return { changed: false, hunks: [], diffText: "" };
+		// Hash differs → the content the caller saw is gone, whatever the line diff says
+		// (a trailing-newline-only change has zero hunks but is still stale).
 		const base = this.store.getBlob(hash);
 		if (base === null) return { changed: true, hunks: [], diffText: "" };
 		const hunks = computeHunks(splitLines(base), splitLines(cur));
-		return { changed: hunks.length > 0, hunks, diffText: formatHunks(splitLines(base), splitLines(cur), hunks) };
+		return { changed: true, hunks, diffText: formatHunks(splitLines(base), splitLines(cur), hunks) };
 	}
 
 	onStoreChange(cb: Parameters<Store["onStoreChange"]>[0]): () => void {

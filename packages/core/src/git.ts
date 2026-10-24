@@ -64,7 +64,9 @@ export async function headContent(cwd: string, file: string): Promise<Buffer | n
 /** Every git-tracked plus untracked-but-not-ignored file, NUL separated. */
 export async function listWorkFiles(cwd: string): Promise<string[]> {
 	const out = await git(cwd, ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], "binary");
-	return out
+	// "binary" (latin1) keeps bytes 1:1; re-decode as UTF-8 so unicode paths survive.
+	return Buffer.from(out, "latin1")
+		.toString("utf8")
 		.split("\0")
 		.filter((p) => p.length > 0);
 }
@@ -74,7 +76,8 @@ export async function dirtyVsHead(cwd: string): Promise<Set<string>> {
 	try {
 		const out = await git(cwd, ["diff", "--name-only", "-z", "HEAD"], "binary");
 		return new Set(
-			out
+			Buffer.from(out, "latin1")
+				.toString("utf8")
 				.split("\0")
 				.filter((p) => p.length > 0),
 		);

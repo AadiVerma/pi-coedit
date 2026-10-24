@@ -29,7 +29,7 @@
   "scripts": {
     "build": "node ../../scripts/build.mjs",
     "typecheck": "tsc -p .",
-    "test": "node --test \"test/**/*.test.ts\""
+    "test": "node --test --test-force-exit \"test/**/*.test.ts\""
   },
   "coedit": {
     "entry": "src/index.ts",

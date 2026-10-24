@@ -49,6 +49,24 @@ export class Store {
 	}
 
 	get config(): CoeditConfig {
+		return this.readFreshConfig();
+	}
+
+	/**
+	 * Config is re-read from disk on access so edits from another session, the
+	 * gutter settings UI, or a CLI take effect immediately. Falls back to the
+	 * in-memory state when the file is unreadable.
+	 */
+	private readFreshConfig(): CoeditConfig {
+		try {
+			const raw = JSON.parse(readFileSync(join(this.dir, "state.json"), "utf8")) as CoeditState;
+			if (raw && raw.config) {
+				this.state.config = raw.config;
+				return raw.config;
+			}
+		} catch {
+			/* fall back to cached */
+		}
 		return this.state.config;
 	}
 

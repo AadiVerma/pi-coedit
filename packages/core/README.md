@@ -62,6 +62,8 @@ The editor sensor (coedit-gutter) is authoritative *outside* agent windows.
 - The event-hunk fallback for never-observed files sizes its line map from the hunks; lines past the last hunk read as `unknown` until a seeded event arrives.
 - Diffs beyond an edit distance of 8000 in the prefix/suffix-trimmed middle section fall back to one full-file replace hunk.
 - The blob cache evicts (LRU-ish, 500 entries); `humanChangesSince` degrades to a boolean when content was evicted.
+- **Line model:** a file whose last line is empty *without* a trailing newline (`["a", ""]` + no `\n`) is indistinguishable from one ending with a newline (`["a"]` + `\n`) — diffs and attribution treat them as equal; raw content hashes still tell them apart, so staleness detection is never fooled.
+- Line attribution only tracks the lines covered by recorded events; a chain that ends short of the file's end reads those lines as `unknown` until the next observed event.
 
 ## Snapshot performance (10k files, Apple M-series, Node 22)
 

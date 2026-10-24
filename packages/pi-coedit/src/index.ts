@@ -12,6 +12,7 @@ import * as pathModule from "node:path";
 import { Type } from "typebox";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import {
+	classifyChange,
 	computeHunks,
 	contentHash,
 	Coedit,
@@ -232,13 +233,13 @@ export default function (pi: ExtensionAPI) {
 			if (afterContent === null) continue;
 			const lastKnown = lastKnownContent(file);
 			if (lastKnown === afterContent) continue; // fs-watch already recorded it
-			await recordChange(
-				file,
-				agent ? "agent" : opts.editorSeen(file) ? "human" : "human",
-				agent ? "pi-bash" : "fs-watch",
-				lastKnown,
-				afterContent,
-			);
+			const editorSeen = opts.editorSeen(file);
+			// Inside an agent window: no editor report -> agent; editor report -> unknown
+			// (human typing during the agent's command — never guessed). Outside: human.
+			const author = agent
+				? classifyChange({ editorSeenHuman: editorSeen, inAgentWindow: true })
+				: classifyChange({ editorSeenHuman: editorSeen, inAgentWindow: false });
+			await recordChange(file, author, agent ? "pi-bash" : "fs-watch", lastKnown, afterContent);
 		}
 		for (const file of diff.removed) {
 			const events = coedit.store.events({ worktree: coedit.worktree, file });

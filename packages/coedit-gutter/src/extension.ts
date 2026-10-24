@@ -13,6 +13,7 @@ import * as pathModule from "path";
 import * as vscode from "vscode";
 import { computeHunks, contentHash, Coedit, type FileSummary, splitLines } from "@coedit/core";
 import { counts, mapAttributionToRanges, nextAgentLine, overlayUnsaved, prevAgentLine, type DecorationRanges } from "./decoration-map.ts";
+import { computeAgentRevert, type RevertEvent } from "./revert-core.ts";
 
 interface WorkspaceState {
 	folder: vscode.WorkspaceFolder;
@@ -368,68 +369,50 @@ async function revertAgent(selectionOnly: boolean): Promise<void> {
 	const selFrom = selectionOnly ? editor.selection.start.line : 0;
 	const selTo = selectionOnly ? editor.selection.end.line : doc.lineCount - 1;
 
-	const events = coedit.store.events({ worktree: coedit.worktree, file }).filter((e) => e.author === "agent");
-	if (events.length === 0) {
+	const agentEvents = coedit.store.events({ worktree: coedit.worktree, file }).filter((e) => e.author === "agent");
+	if (agentEvents.length === 0) {
 		vscode.window.showInformationMessage("coedit: no recorded agent changes in this file");
 		return;
 	}
-	if (!(await vscode.window.showWarningMessage(`coedit: revert ${events.length} agent change(s) in ${file}?`, { modal: true }, "Revert"))) return;
+	if (!(await vscode.window.showWarningMessage(`coedit: revert ${agentEvents.length} agent change(s) in ${file}?`, { modal: true }, "Revert"))) return;
 
-	// Invert each agent event, newest first, from the blob cache. Each hunk is
-	// verified against the recorded after-content (3-way-safe): mismatches are
-	// reported as conflicts instead of being applied blindly.
-	const edits: Array<{ range: vscode.Range; text: string }> = [];
-	let conflicts = 0;
-	for (let i = events.length - 1; i >= 0; i--) {
-		const ev = events[i];
+	// Content-anchored revert (pure module, unit-tested): locate each agent hunk's
+	// inserted lines verbatim, restore what they replaced, report conflicts.
+	const events: RevertEvent[] = [];
+	for (const ev of agentEvents) {
 		const before = ev.beforeHash ? coedit.store.getBlob(ev.beforeHash) : null;
 		const after = ev.afterHash ? coedit.store.getBlob(ev.afterHash) : null;
-		if (before === null || after === null) {
-			conflicts++;
-			continue;
-		}
-		const beforeLines = splitLines(before);
-		const afterLines = splitLines(after);
-		for (const h of [...ev.hunks].sort((a, b) => b.insStart - a.insStart)) {
-			const end = h.insStart + h.insCount; // exclusive
-			const currentSlice = h.insCount > 0 ? trySliceLines(doc, h.insStart, end) : null;
-			const expected = afterLines.slice(h.insStart, end).map((l) => l.replace(/\r$/, ""));
-			if (currentSlice === null || currentSlice.join("\n") !== expected.join("\n")) {
-				conflicts++;
-				continue;
-			}
-			if (h.insStart > selTo || end - 1 < selFrom) continue;
-			const replacement = beforeLines.slice(h.delStart, h.delStart + h.delCount).join("\n");
-			edits.push({
-				range: new vscode.Range(h.insStart, 0, end, 0),
-				text: replacement === "" ? "" : replacement + "\n",
-			});
-		}
+		events.push({
+			hunks: ev.hunks,
+			beforeLines: before === null ? null : splitLines(before),
+			afterLines: after === null ? null : splitLines(after),
+		});
 	}
-	if (edits.length === 0) {
+	const currentLines = doc.getText().split("\n");
+	if (currentLines.length > 0 && currentLines[currentLines.length - 1] === "") currentLines.pop();
+	const result = computeAgentRevert(currentLines, events, selectionOnly ? { from: selFrom, to: selTo } : undefined);
+	if (!result.changed) {
 		vscode.window.showWarningMessage(
-			conflicts > 0 ? `coedit: nothing reverted — ${conflicts} hunk(s) conflicted with the current file` : "coedit: nothing to revert",
+			result.conflicts.length > 0
+				? `coedit: nothing reverted — ${result.conflicts.length} hunk(s) conflicted: ${result.conflicts[0]}`
+				: "coedit: nothing to revert"
 		);
 		return;
 	}
+	const hadTrailingNewline = doc.getText().endsWith("\n") || doc.getText() === "";
+	const newText = result.lines.length === 0 ? "" : result.lines.join("\n") + (hadTrailingNewline ? "\n" : "");
 	lastRevertUri = doc.uri;
 	lastRevertAt = Date.now();
 	const wsEdit = new vscode.WorkspaceEdit();
-	for (const e of edits) wsEdit.replace(doc.uri, e.range, e.text);
+	wsEdit.replace(doc.uri, new vscode.Range(0, 0, doc.lineCount, 0), newText);
 	const ok = await vscode.workspace.applyEdit(wsEdit);
 	if (ok) {
 		await doc.save();
 		vscode.window.showInformationMessage(
-			`coedit: reverted ${edits.length} agent hunk(s)${conflicts > 0 ? ` — ${conflicts} hunk(s) conflicted, review the file` : ""}`,
+			`coedit: reverted agent changes (whole-file apply)${result.conflicts.length > 0 ? ` — ${result.conflicts.length} hunk(s) conflicted, review the file` : ""}`
 		);
 	} else {
 		vscode.window.showErrorMessage("coedit: revert failed (conflicting changes)");
 	}
 }
 
-function trySliceLines(doc: vscode.TextDocument, start: number, end: number): string[] | null {
-	if (start < 0 || end > doc.lineCount) return null;
-	const out: string[] = [];
-	for (let i = start; i < end; i++) out.push(doc.lineAt(i).text);
-	return out;
-}
