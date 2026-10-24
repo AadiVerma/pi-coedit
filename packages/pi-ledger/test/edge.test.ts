@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { commitLedger, formatNoteSummary, formatRangeTotals, parseLedgerNote, readLedgerUsage, recordTurnUsage } from "../src/ledger.ts";
-import { git, makeTempRepo } from "./helpers.ts";
+import { makeTempRepo } from "./helpers.ts";
 
 function usage(ts: string, cost: number, session = "s1") {
 	return { ts, turn: 0, sessionId: session, model: "m", provider: "p", input: 100, output: 50, cacheRead: 0, cacheWrite: 0, costUsd: cost };
