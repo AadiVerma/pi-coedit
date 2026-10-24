@@ -33,7 +33,7 @@ console.log(`[demo] fixture: ${fixture}\n[demo] running real pi session (4 agent
 await new Promise((resolveSpawn) => {
 	const child = spawn(
 		pi,
-		["--mode", "json", "-e", join(root, "packages", "pi-bisect"), "-e", driver, "--model", "coedit-demo/scripted", "--no-session", "Make a few improvements to util.js."],
+		["--mode", "json", "-ne", "-e", join(root, "packages", "pi-bisect"), "-e", driver, "--model", "coedit-demo/scripted", "--no-session", "Make a few improvements to util.js."],
 		{ cwd: fixture, env: process.env, stdio: ["ignore", "pipe", "pipe"] },
 	);
 	let out = "";

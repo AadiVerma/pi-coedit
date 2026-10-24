@@ -39,7 +39,7 @@ const result = await new Promise((resolveSpawn) => {
 	const child = spawn(
 		pi,
 		[
-			"--mode", "json",
+			"--mode", "json", "-ne",
 			"-e", join(root, "packages", "pi-coedit"),
 			"-e", join(root, "scripts", "demo", "demo-driver.ts"),
 			"--model", "coedit-demo/scripted",

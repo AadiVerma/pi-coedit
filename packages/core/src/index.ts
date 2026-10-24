@@ -1,7 +1,7 @@
 import { AttributionEngine } from "./attribution.ts";
 
 import { computeHunks, formatHunks } from "./diff.ts";
-import { attachNote, committerIdentity, dirtyVsHead, gitAiPresent, headCommit, headContent, isRepo, readNote, repoInfo } from "./git.ts";
+import { attachNote, committerIdentity, dirtyVsHead, gitAiPresent, headCommit, headContent, isGitIgnored, isRepo, readNote, repoInfo } from "./git.ts";
 import { GIT_AI_NOTES_REF, buildGitAiNote, renderGitAiNote } from "./gitai.ts";
 import { diffSnapshots, emptySnapshot, readContent, takeSnapshot } from "./snapshot.ts";
 import { Store } from "./store.ts";
@@ -210,6 +210,7 @@ export class Coedit {
 		for (const file of this.engine.filesTracked()) {
 			const attr = this.engine.get(file);
 			if (!attr || attr.binary) continue;
+			if (await isGitIgnored(this.worktree, file)) continue; // build artifacts etc. never count
 			const cur = readContent(this.worktree, file);
 			if (cur === null) continue;
 			const curLines = splitLines(cur);

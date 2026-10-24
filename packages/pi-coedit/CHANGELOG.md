@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- fs-watch and the live footer now respect .gitignore — build artifacts (dist/, *.tgz, …) never pollute attribution again.
+
 ## 0.1.2
 
 - Live footer: only lines that currently diverge from HEAD count — manually reverting a file clears it from the footer without needing a commit; /coedit status matches.

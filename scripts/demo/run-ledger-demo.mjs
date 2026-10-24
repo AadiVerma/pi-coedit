@@ -33,7 +33,7 @@ console.log("\n[demo] running the real pi session (2 agent edits with per-turn c
 await new Promise((resolveSpawn) => {
 	const child = spawn(
 		pi,
-		["--mode", "json", "-e", join(root, "packages", "pi-coedit"), "-e", join(root, "packages", "pi-ledger"), "-e", join(root, "scripts", "demo", "ledger-driver.ts"), "--model", "coedit-demo/scripted", "--no-session", "Make some improvements."],
+		["--mode", "json", "-ne", "-e", join(root, "packages", "pi-coedit"), "-e", join(root, "packages", "pi-ledger"), "-e", join(root, "scripts", "demo", "ledger-driver.ts"), "--model", "coedit-demo/scripted", "--no-session", "Make some improvements."],
 		{ cwd: fixture, env: process.env, stdio: ["ignore", "pipe", "pipe"] },
 	);
 	let out = "";
@@ -61,8 +61,9 @@ console.log("\n════ pi-ledger range HEAD~1..HEAD ════");
 const range = spawnSync(process.execPath, [cli, "range", "HEAD~1..HEAD"], { cwd: fixture, encoding: "utf8" });
 console.log(range.stdout.trim() || range.stderr.trim());
 
-const rawNote = git(["notes", "--ref=pi-ledger", "show", "HEAD"]);
-const note = JSON.parse(rawNote);
+let rawNote = null;
+try { rawNote = git(["notes", "--ref=pi-ledger", "show", "HEAD"]); } catch { console.log("(no ledger note on HEAD)"); }
+const note = rawNote ? JSON.parse(rawNote) : { sessions: [], edits: [] };
 const pass =
 	note.sessions.length > 0 &&
 	note.sessions[0].costUsd > 0 &&

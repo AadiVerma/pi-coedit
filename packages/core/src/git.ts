@@ -86,6 +86,16 @@ export async function dirtyVsHead(cwd: string): Promise<Set<string>> {
 	}
 }
 
+/** True when git considers the path ignored (.gitignore). Not-ignored and errors both return false. */
+export async function isGitIgnored(worktree: string, file: string): Promise<boolean> {
+	try {
+		await exec("git", ["check-ignore", "-q", file], { cwd: worktree });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export async function committerIdentity(cwd: string): Promise<string> {
 	let name = "";
 	let email = "";

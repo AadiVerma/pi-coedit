@@ -423,3 +423,45 @@ test("EDGE utils: excerpt caps and flattens whitespace", () => {
 	assert.equal(excerpt(long).length, 200);
 	assert.ok(excerpt(long).endsWith("…"));
 });
+
+test("EDGE live summary: gitignored artifacts never count, tracked work does", { timeout: 60_000 }, async () => {
+	const repo = makeTempRepo();
+	writeFile(repo, ".gitignore", "dist/\n*.tgz\n");
+	writeFile(repo, "src.js", "one\n");
+	git(repo, ["add", "."]);
+	git(repo, ["commit", "-qm", "init"]);
+	const coedit = (await Coedit.open(repo))!;
+	await coedit.track();
+
+	// build artifacts + tracked file both get events (as fs-watch would)
+	await coedit.recordEvent({
+		file: "dist/bundle.js",
+		author: "human",
+		source: "fs-watch",
+		beforeHash: null,
+		afterHash: "d1",
+		hunks: [{ delStart: 0, delCount: 0, insStart: 0, insCount: 1 }],
+	});
+	await coedit.recordEvent({
+		file: "pkg.tgz",
+		author: "human",
+		source: "fs-watch",
+		beforeHash: null,
+		afterHash: "d2",
+		hunks: [{ delStart: 0, delCount: 0, insStart: 0, insCount: 1 }],
+	});
+	writeFile(repo, "src.js", "one\ntwo\n");
+	await coedit.recordEvent({
+		file: "src.js",
+		author: "agent",
+		source: "pi-edit",
+		beforeHash: contentHash("one\n"),
+		afterHash: contentHash("one\ntwo\n"),
+		hunks: [{ delStart: 1, delCount: 0, insStart: 1, insCount: 1 }],
+		agent: { sessionId: "s", turn: 0 },
+	});
+
+	const live = await coedit.fileSummaryLive();
+	assert.deepEqual(live, [{ file: "src.js", human: 0, agent: 1, both: 0, unknown: 0 }]);
+	coedit.close();
+});

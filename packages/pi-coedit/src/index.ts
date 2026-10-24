@@ -19,6 +19,7 @@ import {
 	formatHunks,
 	gitAiPresent,
 	headContent,
+	isGitIgnored,
 	type AgentMeta,
 	type CoeditEvent,
 	type Snapshot,
@@ -269,6 +270,7 @@ export default function (pi: ExtensionAPI) {
 		if (!coedit || !filename) return;
 		const file = relPath(pathModule.resolve(coedit.worktree, filename));
 		if (!file) return;
+		if (await isGitIgnored(coedit.worktree, file)) return; // dist/, .tgz, etc.
 		if (windowDepth > 0) return; // the window-close diff records it
 		if (pendingEdits.size > 0) return; // our own agent edit lands via tool_execution_end
 		await new Promise((r) => setTimeout(r, 250)); // debounce editor save bursts
