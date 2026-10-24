@@ -214,8 +214,21 @@ export default function (pi: ExtensionAPI) {
 		if (!coedit) return;
 		// Checkpoint: changes since the last boundary that nobody recorded are human (rule 3a).
 		const prev = turnSnap;
+		const headBefore = coedit.head;
 		turnSnap = await coedit.snapshot(prev ?? undefined);
 		if (prev) await diffAndRecord(prev, turnSnap, { editorSeen: () => false }, false);
+		// Commit detection: when HEAD moves, the committed lines return to
+		// "unchanged" (footer clears) and their attribution is handed to the
+		// note writer (Git AI format, attached only while git-ai is absent).
+		if (turnSnap.head && turnSnap.head !== headBefore) {
+			try {
+				await coedit.exportGitAiNote(turnSnap.head);
+			} catch {
+				/* note writing must never block the turn */
+			}
+			await coedit.resetBaseline(turnSnap.head);
+			updateFooter();
+		}
 	});
 
 	/** Diff two snapshots and record whatever no other path recorded yet. */

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Commit detection: when HEAD moves, committed lines return to unchanged, the footer clears, and attribution is handed to a Git AI–standard note (attached only while git-ai is absent).
+
 ## 0.1.0
 
 - Human-edit watcher with editor-sensor precedence and agent-window awareness.
