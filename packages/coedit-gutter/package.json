@@ -3,7 +3,7 @@
   "displayName": "coedit gutter",
   "description": "Live human-vs-agent line attribution in the gutter (works in VS Code, Cursor, Windsurf) — blue = you, purple = agent, orange = both, grey = unclear.",
   "publisher": "coedit-dev",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "repository": {
     "type": "git",

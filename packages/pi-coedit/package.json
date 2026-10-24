@@ -1,6 +1,6 @@
 {
   "name": "pi-coedit",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Live human-vs-agent edit awareness for the pi coding agent: overwrite protection, human-edit notes, /whose attribution.",
   "license": "MIT",
   "type": "module",

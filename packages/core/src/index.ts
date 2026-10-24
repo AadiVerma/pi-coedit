@@ -200,6 +200,39 @@ export class Coedit {
 		return this.engine.summary();
 	}
 
+	/**
+	 * Live view: only lines that currently DIVERGE from HEAD are counted.
+	 * A file whose content equals HEAD (committed, or manually reverted)
+	 * contributes nothing; in partially-dirty files only the dirty lines do.
+	 */
+	async fileSummaryLive(): Promise<FileSummary[]> {
+		const out: FileSummary[] = [];
+		for (const file of this.engine.filesTracked()) {
+			const attr = this.engine.get(file);
+			if (!attr || attr.binary) continue;
+			const cur = readContent(this.worktree, file);
+			if (cur === null) continue;
+			const curLines = splitLines(cur);
+			const dirty: boolean[] = new Array(curLines.length).fill(false);
+			const head = this.headSha ? await headContent(this.worktree, file) : null;
+			if (head === null) {
+				// untracked / new file: every attributed line is uncommitted work
+				dirty.fill(true);
+			} else {
+				const hunks = computeHunks(splitLines(head.toString("utf8")), curLines);
+				for (const h of hunks) {
+					for (let i = h.insStart; i < h.insStart + h.insCount && i < dirty.length; i++) dirty[i] = true;
+				}
+			}
+			const sum: FileSummary = { file, human: 0, agent: 0, both: 0, unknown: 0 };
+			attr.lines.forEach((l, i) => {
+				if (i < dirty.length && dirty[i] && l.origin !== "unchanged") sum[l.origin]++;
+			});
+			if (sum.human + sum.agent + sum.both + sum.unknown > 0) out.push(sum);
+		}
+		return out.sort((a, b) => a.file.localeCompare(b.file));
+	}
+
 	/** Cache content for later diffing (e.g. the overwrite guard's last-read hash). Returns its hash. */
 	cacheContent(content: string): string {
 		return this.store.cacheBlob(content);

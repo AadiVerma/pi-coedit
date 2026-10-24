@@ -145,9 +145,11 @@ export default function (pi: ExtensionAPI) {
 
 	// ---------------------------------------------------------------- footer
 
-	function updateFooter(): void {
+	async function updateFooter(): Promise<void> {
 		if (!coedit) return;
-		const summary = coedit.fileSummary();
+		// Live view: only lines that currently diverge from HEAD count —
+		// committed or manually reverted files drop out of the footer.
+		const summary = await coedit.fileSummaryLive();
 		const humanFiles = summary.filter((s) => s.human + s.both > 0).length;
 		const agentFiles = summary.filter((s) => s.agent + s.both > 0).length;
 		const unknownFiles = summary.filter((s) => s.unknown > 0).length;
@@ -189,7 +191,7 @@ export default function (pi: ExtensionAPI) {
 		} catch {
 			watching = false;
 		}
-		updateFooter();
+		await updateFooter();
 		if (ctx.hasUI) ctx.ui.notify("coedit: watching for human and agent edits", "info");
 	});
 
@@ -227,8 +229,8 @@ export default function (pi: ExtensionAPI) {
 				/* note writing must never block the turn */
 			}
 			await coedit.resetBaseline(turnSnap.head);
-			updateFooter();
 		}
+		await updateFooter();
 	});
 
 	/** Diff two snapshots and record whatever no other path recorded yet. */
@@ -280,7 +282,7 @@ export default function (pi: ExtensionAPI) {
 			before = headBuf ? headBuf.toString("utf8") : null;
 		}
 		await recordChange(file, "human", "fs-watch", before, after);
-		updateFooter();
+		await updateFooter();
 	}
 
 	// ---------------------------------------------------------------- agent tool tracking
@@ -321,7 +323,7 @@ export default function (pi: ExtensionAPI) {
 				const after = await coedit.snapshot();
 				await diffAndRecord(windowSnap, after, { editorSeen: (f) => editorReportedRecently(f) }, true);
 				windowSnap = null;
-				updateFooter();
+				await updateFooter();
 			}
 		}
 		if ((event.toolName === "edit" || event.toolName === "write") && !event.isError) {
@@ -339,7 +341,7 @@ export default function (pi: ExtensionAPI) {
 				);
 				if (afterContent !== null) lastAgentRead.set(pending.file, coedit.cacheContent(afterContent));
 				agentTouched.add(pending.file);
-				updateFooter();
+				await updateFooter();
 			}
 		}
 	});
@@ -503,7 +505,7 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 			if (sub === "status") {
-				const summary = coedit.fileSummary();
+				const summary = await coedit.fileSummaryLive();
 				const lines = [
 					`coedit status — store: ${coedit.store.dir}`,
 					`head: ${coedit.head ? coedit.head.slice(0, 8) : "none"} · watcher: ${watching ? "running" : "stopped"}`,

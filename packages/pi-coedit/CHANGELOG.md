@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Live footer: only lines that currently diverge from HEAD count — manually reverting a file clears it from the footer without needing a commit; /coedit status matches.
+- Footer refresh at every turn boundary.
+
 ## 0.1.1
 
 - Commit detection: when HEAD moves, committed lines return to unchanged, the footer clears, and attribution is handed to a Git AI–standard note (attached only while git-ai is absent).

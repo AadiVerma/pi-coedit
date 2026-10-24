@@ -11,7 +11,7 @@
  */
 import * as pathModule from "path";
 import * as vscode from "vscode";
-import { computeHunks, contentHash, Coedit, type FileSummary, splitLines } from "@coedit/core";
+import { computeHunks, contentHash, Coedit, headCommit, type FileSummary, splitLines } from "@coedit/core";
 import { counts, mapAttributionToRanges, nextAgentLine, overlayUnsaved, prevAgentLine, type DecorationRanges } from "./decoration-map.ts";
 import { computeAgentRevert, type RevertEvent } from "./revert-core.ts";
 
@@ -102,7 +102,17 @@ async function initState(st: WorkspaceState): Promise<void> {
 		(() => {
 			const unsub = st.coedit!.onStoreChange(() => {
 				if (st.rerenderTimer) clearTimeout(st.rerenderTimer);
-				st.rerenderTimer = setTimeout(() => rerenderAll(), vscode.workspace.getConfiguration("coedit").get<number>("debounceMs", 300));
+				st.rerenderTimer = setTimeout(() => {
+					void (async () => {
+						// HEAD moved (a commit landed): committed lines return to
+						// unchanged so decorations don't go stale after commits.
+						if (st.coedit) {
+							const head = await headCommit(st.folder.uri.fsPath);
+							if (head && head !== st.coedit.head) await st.coedit.resetBaseline(head);
+						}
+						rerenderAll();
+					})();
+				}, vscode.workspace.getConfiguration("coedit").get<number>("debounceMs", 300));
 			});
 			return { dispose: unsub } as vscode.Disposable;
 		})(),

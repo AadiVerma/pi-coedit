@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Commit detection: when HEAD moves, decorations for committed lines are cleared (store watcher now reconciles against HEAD).
+
 ## 0.1.0
 
 - Live gutter attribution (human / agent / both / unknown) with gutter bars, overview ruler marks and optional line background.

@@ -365,3 +365,26 @@ test("SCEN: prompt excerpts capped and switchable off", { timeout: 60_000 }, asy
 });
 
 void contentHash;
+
+test("SCEN: manually reverting to HEAD content clears the footer without a commit", { timeout: 60_000 }, async () => {
+	const repo = makeRepo();
+	wf(repo, "a.js", "l1\nl2\n");
+	git(repo, ["add", "."]);
+	git(repo, ["commit", "-qm", "init"]);
+	const h = await createHarness(repo, { mode: "tui" });
+	await h.startSession();
+
+	// agent edits a file
+	await h.dispatch("tool_execution_start", { toolName: "edit", toolCallId: "e1", args: { path: "a.js", edits: [] } });
+	wf(repo, "a.js", "l1\nl2\nl3-agent\n");
+	await h.dispatch("tool_execution_end", { toolName: "edit", toolCallId: "e1", isError: false });
+	assert.ok((h.widget.content?.[0] ?? "").includes("agent"), "footer shows the agent edit");
+
+	// user manually reverts the file to HEAD content — no commit
+	wf(repo, "a.js", "l1\nl2\n");
+	await h.dispatch("turn_start");
+
+	// worktree now equals HEAD → nothing uncommitted → footer gone
+	assert.equal(h.widget.content, undefined, `footer should clear on manual revert, got: ${h.widget.content?.[0]}`);
+	await h.shutdownSession();
+});
