@@ -1,73 +1,153 @@
-# pi-coedit
+<div align="center">
+  <img width="1200" height="400" alt="pi-coedit banner" src="assets/banner.svg" />
+</div>
 
-**Human-vs-AI edit accountability for the [pi coding agent](https://github.com/earendil-works/pi) and VS Code.**
+<div align="center">
 
-When a human and the pi agent edit the same repo at the same time, everyone should always know who changed what. coedit makes every agent edit traceable, searchable and costed — **live, before commit** — and stops the agent from silently overwriting human work.
+[![Made by Aditya](https://img.shields.io/badge/Made%20by-Aditya-black?style=flat-square)](#)
+[![pi](https://img.shields.io/badge/pi-1.4%2B-blue?style=flat-square)](https://github.com/earendil-works/pi)
+[![vscode](https://img.shields.io/badge/editor-VS%20Code%20%7C%20Cursor%20%7C%20Windsurf-informational?style=flat-square)](packages/coedit-gutter)
+[![tests](https://img.shields.io/badge/tests-7%2C400%2B%20cases-success?style=flat-square)](EVIDENCE.md)
+[![license](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
-```text
-✍️ you 3 files · 🤖 agent 7 · ⚠️ 1 unknown          ← pi footer, live
-🟦 you   🟪 agent   🟧 both   ⬜ unclear            ← gutter, line by line
-```
+</div>
 
-## The problem
+<br/>
 
-Git blame only tells you who wrote a line **after** someone commits — and it can't tell a human's keystrokes from an agent's. While the agent works, "everything is green": the model doesn't know you just rewrote the function it's about to edit, you can't tell which of its edits broke the build, and nobody can price a PR by what the agent actually cost.
+## Introduction
 
-## The packages
+You code with an AI agent in the same repo — and after a while nobody can say who wrote which line, the agent silently overwrites your edits, and when tests break you have no idea *which* agent turn did it.
 
-| Package | What it does |
-|---|---|
-| [`packages/core`](packages/core) | The engine: event store, snapshots, dependency-free diff, per-line attribution, Git AI note codec (private, bundled into every artifact) |
-| [`packages/pi-coedit`](packages/pi-coedit) | pi plugin: the agent learns about your edits, can't silently overwrite them, `/whose` shows per-line authorship |
-| [`packages/coedit-gutter`](packages/coedit-gutter) | VS Code/Cursor/Windsurf extension: live blue/purple/orange/grey gutters, your keystrokes become the authoritative human signal, 3-way-safe revert of agent changes |
-| [`packages/pi-bisect`](packages/pi-bisect) | pi plugin: `/bisect "npm test"` finds the exact agent edit that broke a command and can revert only that edit |
-| [`packages/pi-ledger`](packages/pi-ledger) | pi plugin + CLI: per-commit cost notes (`refs/notes/pi-ledger`), `pi-ledger show/blame/range/report` |
+**pi-coedit** fixes that. Every line is attributed to **you 🟦 · agent 🟪 · both 🟧 · unclear ⬜** — live, while you both work, before anyone commits. The agent is told about your edits, blocked from clobbering them, and every commit carries the exact edits, prompts and cost that produced it.
 
-Every artifact bundles core with esbuild — users install exactly one thing per tool.
+## 📦 What's inside
 
-## Demos
+<table>
+<tr><td valign="top">
 
-> 📸 GIF placeholders (record on a machine with VS Code):
-> - human typing in VS Code while pi edits the same file — blue vs purple lines live, overlap turns orange
-> - the overwrite guard blocking a stale agent edit, with the human diff in the reason
-> - `/bisect "npm test"` naming the culprit edit, prompt and turn
->
-> Until recorded: `scripts/demo/run-coedit-demo.mjs [--stale]`, `run-bisect-demo.mjs`, `run-ledger-demo.mjs` run the real pi loop with a scripted offline provider and print the evidence.
+**Live awareness**
+| # | Package | What you get |
+|---|---|---|
+| 1 | [`pi-coedit`](packages/pi-coedit) | pi plugin — the agent sees your edits, can't overwrite them, `/whose` shows who wrote each line |
+| 2 | [`coedit-gutter`](packages/coedit-gutter) | VS Code / Cursor / Windsurf — live 🟦🟪🟧⬜ gutters, hover any agent line for its prompt & session |
 
-## Relationship to Git AI
+</td><td valign="top">
 
-[Git AI](https://github.com/git-ai-project/git-ai) records attribution **post-commit** as git notes (`refs/notes/ai`, [standard v3.0.0](https://github.com/git-ai-project/git-ai/blob/main/specs/git_ai_standard_v3.0.0.md)) and ships IDE blame plugins. coedit **extends** it with the live layer: pre-commit awareness, overwrite protection, agent-edit bisect, and per-commit cost.
+**Power tools**
+| # | Package | What you get |
+|---|---|---|
+| 3 | [`pi-bisect`](packages/pi-bisect) | `/bisect "npm test"` → names the exact agent edit that broke the build, reverts only it |
+| 4 | [`pi-ledger`](packages/pi-ledger) | every commit gets a cost note — tokens, dollars, models — `pi-ledger range main..HEAD` |
+| 5 | [`@coedit/core`](packages/core) | the engine all of the above share (bundled in, nothing extra to install) |
 
-They coexist cleanly: coedit keeps its live state in `<git-common-dir>/coedit/`, never writes `refs/notes/ai` while the `git-ai` binary is installed, reads its notes read-only to enrich committed views, and can attach a standard-compliant authorship log itself when Git AI is absent. Details in [`docs/PLAN.md`](docs/PLAN.md) §0.2.
+</td></tr>
+</table>
 
-## Who changed what — detection rules
+## 🚀 Install
 
-| Signal | Author |
-|---|---|
-| Agent `edit`/`write` tool call | 🟪 agent (session, turn, model, capped prompt excerpt) |
-| Change inside an agent bash window (snapshot bracketed), no editor report | 🟪 agent |
-| Keystroke edit reported by the coedit-gutter sensor, outside agent windows | 🟦 human (authoritative) |
-| Human typing landing during an agent bash window | ⬜ unknown — never guessed |
-| fs-watch / turn-boundary changes outside agent windows | 🟦 human |
-| Dirty vs HEAD but never observed | ⬜ unknown (documented limit) |
-
-Limits and the attribution model are documented in [`packages/core/README.md`](packages/core/README.md).
-
-## Privacy
-
-No secrets in files, logs or notes. Prompt excerpts are capped at 200 chars and switchable off (`privacy.promptExcerpts: false` / `coedit.config.promptExcerpts`). Ledger notes hold tokens and costs, never prompts. Notes are local until you push them.
-
-## Development
+**In pi** — one command per plugin, no build step, no clone:
 
 ```bash
-npm install
-npm run check        # package checks (incl. command/tool name registry) + typecheck + 54 tests
-npm run benchmark -w @coedit/core   # 10k-file snapshot benchmark (cold 269 ms / warm 71 ms)
-npm run new <name>   # scaffold a new pi package from templates/pi-plugin
+pi install npm:pi-coedit          # live awareness + overwrite protection
+pi install npm:pi-bisect          # /bisect for agent regressions
+pi install npm:pi-coedit-ledger   # cost notes on every commit
+
+pi-ledger install                 # (optional) cost note hook on git commit
 ```
 
-The demos run without model credentials: `node scripts/demo/run-coedit-demo.mjs [--stale]`.
+**In your editor** — install once, works in VS Code, Cursor and Windsurf:
 
-## Publishing
+```bash
+code --install-extension coedit-dev.coedit-gutter
+```
 
-MIT. Publishing (npm / VS Code Marketplace / Open VSX) is **never automated** — the owner approves and runs each command. See `EVIDENCE.md` for the build-order evidence, `docs/PLAN.md` for verified facts and the interop decision.
+or grab the `.vsix` from the [releases page](https://github.com/AadiVerma/pi-coedit/releases) and install it manually.
+
+That's it. Open a repo, run pi, start typing — the footer shows `✍️ you 3 files · 🤖 agent 7 · ⚠️ 1 unknown` the moment both of you have touched the code.
+
+> **Status:** packages are publish-ready and waiting on the final go-ahead — until the first `npm publish` / Marketplace release lands, the from-source instructions in the **Development** section below are the way to run them today.
+
+## 💬 Commands you'll actually use
+
+| Command | What it does |
+|---|---|
+| `/whose <file>` | per-line authorship: 🟦 you · 🟪 agent · 🟧 both · ⬜ unclear — with the session, turn and prompt behind every agent line |
+| `/coedit status` | what's attributed so far, watcher + guard state |
+| `/coedit doctor` | store writable? watcher running? Git AI detected? |
+| `/bisect "npm test"` | binary-searches the agent's own edits in a throwaway worktree → the one that broke it, with its prompt; `--revert` undoes only that edit |
+| `/ledger install` | attach a post-commit hook that writes a cost note to every commit |
+| `pi-ledger range main..HEAD` | tokens + dollars for the whole PR, ready to paste into the description |
+| `coedit_whose` | a read-only tool the *agent* can call to check what you changed |
+
+## 🛡️ How the agent can't ruin your day
+
+When the agent tries to `edit` a file you changed since it last read it:
+
+1. pi blocks the call and tells it why — including your diff;
+2. the agent re-reads, merges your changes, and retries;
+3. or you choose *allow anyway* / *cancel* in the TUI.
+
+Policy is yours: `block` / `ask` (default) / `warn` / `off`.
+
+## 🧩 Build your own pi plugin
+
+This monorepo doubles as a template for writing pi packages. If you want to *use* coedit, the **Install** section above is all you need — this part is for extending it:
+
+```bash
+git clone https://github.com/AadiVerma/pi-coedit.git
+cd pi-coedit && npm install
+
+npm run new my-awesome-plugin -- "Does something awesome"
+pi -e ./packages/my-awesome-plugin   # try it instantly, no publish needed
+```
+
+You get the full pi package anatomy for free — the `"pi"` manifest, `pi-package` keyword for the pi.dev gallery, host packages as `peerDependencies: "*"` (never bundled), esbuild bundling, tests and CI rules. Look at [`packages/pi-coedit/src/index.ts`](packages/pi-coedit/src/index.ts) for a complete working example of commands, tools and event hooks. `npm run check` enforces the monorepo rules before anything ships.
+
+## 🤝 Works with Git AI
+
+[Git AI](https://github.com/git-ai-project/git-ai) records attribution **after commit**; coedit covers everything **before** it. They coexist: coedit never touches Git AI's `refs/notes/ai` while `git-ai` is installed, reads its notes read-only, and can write a standard-compliant authorship log itself when Git AI is absent. Details in [docs/PLAN.md](docs/PLAN.md).
+
+## 📚 Learn more
+
+| Doc | |
+|---|---|
+| [docs/PLAN.md](docs/PLAN.md) | verified environment facts · prior-art survey · Git AI interop decision |
+| [docs/QA-PLAN.md](docs/QA-PLAN.md) | how this is tested — matrices, fuzz suites, 7,400+ cases per run |
+| [EVIDENCE.md](EVIDENCE.md) | build-order evidence trail + the QA bug ledger |
+| [packages/core](packages/core) | the attribution model, store layout, detection rules, limits |
+
+## ⚠️ Notes
+
+- Node ≥ 22, pi 1.4+, VS Code ≥ 1.90 for the gutter extension
+- prompt excerpts are capped at 200 chars and can be turned off; notes stay local until *you* push them
+- publishing (npm / Marketplace) is manual and maintainer-approved — never automated
+
+## 🛠️ Development
+
+For contributing or running from source:
+
+```bash
+git clone https://github.com/AadiVerma/pi-coedit.git
+cd pi-coedit && npm install
+npm run check        # package checks + typecheck + 114 test blocks (7,400+ cases)
+
+# try any plugin from source
+npm run build && pi -e ./packages/pi-coedit
+
+# package the editor extension locally
+cd packages/coedit-gutter && npm run package
+```
+
+Demos run the real pi agent loop offline (scripted provider, no credentials needed):
+
+```bash
+node scripts/demo/run-coedit-demo.mjs [--stale]
+node scripts/demo/run-bisect-demo.mjs
+node scripts/demo/run-ledger-demo.mjs
+```
+
+Every pi command and tool name is registered and uniqueness-checked; core changes require core tests; each package keeps its README and CHANGELOG current; changesets accompany user-visible changes.
+
+## License
+
+[MIT](LICENSE) © Aditya

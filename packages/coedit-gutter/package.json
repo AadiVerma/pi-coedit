@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/OWNER/pi-coedit"
+    "url": "https://github.com/AadiVerma/pi-coedit"
   },
   "private": false,
   "type": "module",
@@ -24,25 +24,78 @@
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-      { "command": "coedit.nextAgentChange", "title": "coedit: next agent change" },
-      { "command": "coedit.prevAgentChange", "title": "coedit: previous agent change" },
-      { "command": "coedit.revertAgentChangesInFile", "title": "coedit: revert agent changes in this file" },
-      { "command": "coedit.revertAgentChangesInSelection", "title": "coedit: revert agent changes in selection" },
-      { "command": "coedit.toggleColors", "title": "coedit: toggle gutter colours" },
-      { "command": "coedit.showWhose", "title": "coedit: show whose for this file" },
-      { "command": "coedit.copySessionCommand", "title": "coedit: copy pi session command" }
+      {
+        "command": "coedit.nextAgentChange",
+        "title": "coedit: next agent change"
+      },
+      {
+        "command": "coedit.prevAgentChange",
+        "title": "coedit: previous agent change"
+      },
+      {
+        "command": "coedit.revertAgentChangesInFile",
+        "title": "coedit: revert agent changes in this file"
+      },
+      {
+        "command": "coedit.revertAgentChangesInSelection",
+        "title": "coedit: revert agent changes in selection"
+      },
+      {
+        "command": "coedit.toggleColors",
+        "title": "coedit: toggle gutter colours"
+      },
+      {
+        "command": "coedit.showWhose",
+        "title": "coedit: show whose for this file"
+      },
+      {
+        "command": "coedit.copySessionCommand",
+        "title": "coedit: copy pi session command"
+      }
     ],
     "configuration": {
       "title": "coedit gutter",
       "properties": {
-        "coedit.colorHuman": { "type": "string", "default": "#4A90D9", "description": "Gutter colour for human lines (blue)" },
-        "coedit.colorAgent": { "type": "string", "default": "#9B59D0", "description": "Gutter colour for agent lines (purple)" },
-        "coedit.colorBoth": { "type": "string", "default": "#E8923A", "description": "Gutter colour for both lines (orange)" },
-        "coedit.colorUnknown": { "type": "string", "default": "#9AA0A6", "description": "Gutter colour for unclear lines (grey)" },
-        "coedit.showBackground": { "type": "boolean", "default": false, "description": "Also tint the line background" },
-        "coedit.showOverviewRuler": { "type": "boolean", "default": true, "description": "Mark attributed lines in the overview ruler" },
-        "coedit.storePath": { "type": "string", "default": "", "description": "Override the coedit store directory (defaults to <git-common-dir>/coedit)" },
-        "coedit.debounceMs": { "type": "number", "default": 300, "description": "Debounce for store re-reads" }
+        "coedit.colorHuman": {
+          "type": "string",
+          "default": "#4A90D9",
+          "description": "Gutter colour for human lines (blue)"
+        },
+        "coedit.colorAgent": {
+          "type": "string",
+          "default": "#9B59D0",
+          "description": "Gutter colour for agent lines (purple)"
+        },
+        "coedit.colorBoth": {
+          "type": "string",
+          "default": "#E8923A",
+          "description": "Gutter colour for both lines (orange)"
+        },
+        "coedit.colorUnknown": {
+          "type": "string",
+          "default": "#9AA0A6",
+          "description": "Gutter colour for unclear lines (grey)"
+        },
+        "coedit.showBackground": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also tint the line background"
+        },
+        "coedit.showOverviewRuler": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mark attributed lines in the overview ruler"
+        },
+        "coedit.storePath": {
+          "type": "string",
+          "default": "",
+          "description": "Override the coedit store directory (defaults to <git-common-dir>/coedit)"
+        },
+        "coedit.debounceMs": {
+          "type": "number",
+          "default": 300,
+          "description": "Debounce for store re-reads"
+        }
       }
     }
   },
