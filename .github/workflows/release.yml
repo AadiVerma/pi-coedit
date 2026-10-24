@@ -1,0 +1,19 @@
+name: Release prep
+# Publishing (npm publish / vsce publish / ovsx publish) is intentionally NOT automated:
+# the owner approves and runs each publish command manually. This workflow only
+# verifies that a release build passes when triggered by hand.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - run: npm run check
+      - run: npx changeset status

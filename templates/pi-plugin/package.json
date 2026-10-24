@@ -1,0 +1,35 @@
+{
+  "name": "__NAME__",
+  "version": "0.1.0",
+  "description": "__DESCRIPTION__",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build.mjs",
+    "typecheck": "tsc -p .",
+    "test": "node --test \"test/**/*.test.ts\""
+  },
+  "coedit": {
+    "entry": "src/index.ts",
+    "outfile": "dist/index.js",
+    "format": "esm"
+  }
+}

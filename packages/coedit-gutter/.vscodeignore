@@ -1,0 +1,7 @@
+src/**
+test/**
+dist/**/*.map
+node_modules/**
+tsconfig.json
+.gitignore
+coedit-gutter.vsix

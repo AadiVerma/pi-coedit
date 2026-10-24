@@ -1,0 +1,26 @@
+{
+  "name": "@coedit/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared engine for coedit: store, snapshots, Myers diff, human-vs-agent line attribution",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build.mjs",
+    "typecheck": "tsc -p .",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "benchmark": "node test/benchmark.mjs"
+  },
+  "coedit": {
+    "entry": "src/index.ts",
+    "outfile": "dist/index.js",
+    "format": "esm"
+  }
+}

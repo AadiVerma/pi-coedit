@@ -1,0 +1,35 @@
+{
+  "name": "pi-coedit-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Human-vs-AI edit accountability for the pi coding agent and VS Code: live attribution, overwrite protection, agent-edit bisect, per-commit agent cost.",
+  "type": "module",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run build && node scripts/check-packages.mjs && npm run typecheck && npm run test",
+    "new": "node scripts/new-plugin.mjs",
+    "changeset": "changeset",
+    "version-packages": "changeset version"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.0",
+    "@earendil-works/pi-ai": "^1.4.0",
+    "@earendil-works/pi-coding-agent": "^1.4.0",
+    "@types/node": "^22.18.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.28.2",
+    "ovsx": "^0.10.0",
+    "typebox": "^1.4.3",
+    "typescript": "^5.9.0"
+  }
+}
