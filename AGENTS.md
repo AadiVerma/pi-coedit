@@ -7,7 +7,7 @@
 ## Layout
 
 - `packages/core` — `@coedit/core`, the shared engine (store, snapshots, Myers diff, attribution). Private; bundled into every artifact. Most tests live here.
-- `packages/pi-coedit`, `packages/pi-bisect`, `packages/pi-ledger` — pi packages (extensions + commands).
+- `packages/pi-coedit`, `packages/pi-bisect`, `packages/pi-ledger`, `packages/pi-helper-desk`, `packages/pi-brain-dump`, `packages/pi-handoff`, `packages/pi-reflect`, `packages/pi-chat-inventory`, `packages/pi-replay`, `packages/pi-screen-share`, `packages/pi-cache-clock` — pi packages (extensions + commands).
 - `packages/coedit-gutter` — VS Code extension (also runs in Cursor/Windsurf via Open VSX).
 - `templates/pi-plugin` — skeleton copied by `npm run new <name>`.
 - `docs/PLAN.md` — verified environment facts, prior-art notes, Git AI interop decision.
@@ -39,6 +39,14 @@ Every pi command and tool name must be unique across the monorepo. `npm run chec
 | pi-coedit | `/whose`, `/coedit` (status, reset, doctor) | `coedit_whose` |
 | pi-bisect | `/bisect` (`--from`, `--runs`, `--timeout`; subcommands `gc`) | — |
 | pi-ledger | `/ledger` (install, show, blame, range, report) | — |
+| pi-helper-desk | `/helpers` | `plan` |
+| pi-handoff | `/handoff` | — |
+| pi-reflect | `/reflect` | — |
+| pi-chat-inventory | `/inventory` | — |
+| pi-replay | `/replay` | — |
+| pi-screen-share | `/screen-share` (toggle) | — |
+| pi-cache-clock | `/cache-clock` (ttl, warm, hide) | — |
+| pi-brain-dump | `/brain-dump` (toggle) | — |
 
 ## Testing locally
 

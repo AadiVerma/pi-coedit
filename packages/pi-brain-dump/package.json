@@ -1,0 +1,35 @@
+{
+  "name": "pi-brain-dump",
+  "version": "0.1.0",
+  "description": "Brain Dump for pi: catches a long, loose prompt before it is sent, asks up to three gap questions, and fills the editor with a four-part brief (the job, the why, the guardrails, done means)",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build.mjs",
+    "typecheck": "tsc -p .",
+    "test": "node --test \"test/**/*.test.ts\""
+  },
+  "coedit": {
+    "entry": "src/index.ts",
+    "outfile": "dist/index.js",
+    "format": "esm"
+  }
+}
