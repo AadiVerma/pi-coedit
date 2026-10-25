@@ -1,5 +1,5 @@
 {
-  "name": "pi-replay",
+  "name": "pi-replay-theater",
   "version": "0.1.0",
   "description": "Replay Theater for pi: /replay steps through the file edits of the chat, one diff at a time",
   "license": "MIT",
@@ -31,5 +31,10 @@
     "entry": "src/index.ts",
     "outfile": "dist/index.js",
     "format": "esm"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ]
 }

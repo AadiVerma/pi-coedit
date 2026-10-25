@@ -40,10 +40,10 @@ Every pi command and tool name must be unique across the monorepo. `npm run chec
 | pi-bisect | `/bisect` (`--from`, `--runs`, `--timeout`; subcommands `gc`) | — |
 | pi-ledger | `/ledger` (install, show, blame, range, report) | — |
 | pi-helper-desk | `/helpers` | `plan` |
-| pi-handoff | `/handoff` | — |
+| pi-chat-handoff (packages/pi-handoff) | `/handoff` | — |
 | pi-reflect | `/reflect` | — |
 | pi-chat-inventory | `/inventory` | — |
-| pi-replay | `/replay` | — |
+| pi-replay-theater (packages/pi-replay) | `/replay` | — |
 | pi-screen-share | `/screen-share` (toggle) | — |
 | pi-cache-clock | `/cache-clock` (ttl, warm, hide) | — |
 | pi-brain-dump | `/brain-dump` (toggle) | — |

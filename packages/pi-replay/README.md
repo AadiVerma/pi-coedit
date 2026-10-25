@@ -1,4 +1,4 @@
-# pi-replay
+# pi-replay-theater
 
 Replay Theater for [pi](https://pi.dev): `/replay` collects every **file edit** of the
 chat — pi's edit results carry display diffs — and steps through them **one diff at a
@@ -10,7 +10,7 @@ Part of the [coedit](../../README.md) monorepo.
 ## Install
 
 ```bash
-pi install npm:pi-replay      # once published
+pi install npm:pi-replay-theater      # once published
 pi install ./packages/pi-replay   # from a checkout
 ```
 

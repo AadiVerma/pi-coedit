@@ -1,5 +1,5 @@
 {
-  "name": "pi-handoff",
+  "name": "pi-chat-handoff",
   "version": "0.1.0",
   "description": "Hand off a long pi chat: writes a handoff prompt from the session branch and starts a fresh session with it",
   "license": "MIT",
@@ -31,5 +31,10 @@
     "entry": "src/index.ts",
     "outfile": "dist/index.js",
     "format": "esm"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ]
 }

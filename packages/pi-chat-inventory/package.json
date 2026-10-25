@@ -31,5 +31,10 @@
     "entry": "src/index.ts",
     "outfile": "dist/index.js",
     "format": "esm"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ]
 }

@@ -1,4 +1,4 @@
-# pi-handoff
+# pi-chat-handoff
 
 Handoff for [pi](https://pi.dev): `/handoff` digests the chat into a **markdown handoff
 prompt** — goal, where this stands (model, context used, files touched, commands run,
@@ -11,7 +11,7 @@ Part of the [coedit](../../README.md) monorepo.
 ## Install
 
 ```bash
-pi install npm:pi-handoff      # once published
+pi install npm:pi-chat-handoff      # once published
 pi install ./packages/pi-handoff   # from a checkout
 ```
 

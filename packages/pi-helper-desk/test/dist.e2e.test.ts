@@ -5,9 +5,23 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+/**
+ * Sibling packages' dist/ is gitignored; on a fresh clone their bundles do not exist
+ * until a build. Load one when built, and skip the test honestly when not.
+ */
+const sibling = async (pkg: string, t: TestContext) => {
+	const path = `../../${pkg}/dist/index.js`;
+	if (!existsSync(new URL(`../../${pkg}/dist/index.js`, import.meta.url).pathname)) {
+		t.skip(`${pkg} not built (dist/ is generated): run npm run build`);
+		return undefined;
+	}
+	return import(path);
+};
+type TestContext = { skip: (reason?: string) => void };
 
 import helperDesk from "../dist/index.js";
 
@@ -153,10 +167,11 @@ test("dist helper-desk: the bar widget factory renders against the real truncate
 // brain-dump
 // ---------------------------------------------------------------------------
 
-test("dist brain-dump: gates a long prompt and fills the editor with the brief", async () => {
-	const mod = await import("../../pi-brain-dump/dist/index.js");
+test("dist brain-dump: gates a long prompt and fills the editor with the brief", async (t) => {
+	const mod = await sibling("pi-brain-dump", t);
+	if (!mod) return;
 	const pi = new FakePi();
-	(mod.default as (pi: any) => void)(pi);
+	(mod.default as (pi: any) => any)(pi);
 	const ctx = tuiCtx();
 	const long = Array.from({ length: 30 }, (_, i) => `w${i}`).join(" ");
 	const r = await pi.fire("input", { type: "input", text: long, source: "interactive" }, ctx);
@@ -169,10 +184,11 @@ test("dist brain-dump: gates a long prompt and fills the editor with the brief",
 // handoff
 // ---------------------------------------------------------------------------
 
-test("dist handoff: builds the handoff from a fake branch and offers a new session", async () => {
-	const mod = await import("../../pi-handoff/dist/index.js");
+test("dist handoff: builds the handoff from a fake branch and offers a new session", async (t) => {
+	const mod = await sibling("pi-handoff", t);
+	if (!mod) return;
 	const pi = new FakePi();
-	(mod.default as (pi: any) => void)(pi);
+	(mod.default as (pi: any) => any)(pi);
 	const ctx = tuiCtx({
 		sessionManager: { getBranch: () => [{ type: "message", message: { role: "user", content: "Build the thing" } }] },
 		getContextUsage: () => ({ percent: 42, tokens: 84_000, contextWindow: 200_000 }),
@@ -189,10 +205,11 @@ test("dist handoff: builds the handoff from a fake branch and offers a new sessi
 // reflect
 // ---------------------------------------------------------------------------
 
-test("dist reflect: a correction after settle writes the rule to AGENTS.md", async () => {
-	const mod = await import("../../pi-reflect/dist/index.js");
+test("dist reflect: a correction after settle writes the rule to AGENTS.md", async (t) => {
+	const mod = await sibling("pi-reflect", t);
+	if (!mod) return;
 	const pi = new FakePi();
-	(mod.default as (pi: any) => void)(pi);
+	(mod.default as (pi: any) => any)(pi);
 	const cwd = mkdtempSync(join(tmpdir(), "reflect-e2e-"));
 	const ctx = tuiCtx({ cwd });
 	await pi.fire("agent_settled", { type: "agent_settled", aborted: false }, ctx);
@@ -205,10 +222,11 @@ test("dist reflect: a correction after settle writes the rule to AGENTS.md", asy
 // chat-inventory
 // ---------------------------------------------------------------------------
 
-test("dist chat-inventory: the pane renders a fake branch through real components", async () => {
-	const mod = await import("../../pi-chat-inventory/dist/index.js");
+test("dist chat-inventory: the pane renders a fake branch through real components", async (t) => {
+	const mod = await sibling("pi-chat-inventory", t);
+	if (!mod) return;
 	const pi = new FakePi();
-	(mod.default as (pi: any) => void)(pi);
+	(mod.default as (pi: any) => any)(pi);
 	const ctx = tuiCtx({
 		sessionManager: {
 			getBranch: () => [
@@ -238,10 +256,11 @@ test("dist chat-inventory: the pane renders a fake branch through real component
 // replay — with REAL key sequences
 // ---------------------------------------------------------------------------
 
-test("dist replay: steps through edits with real arrow-key sequences", async () => {
-	const mod = await import("../../pi-replay/dist/index.js");
+test("dist replay: steps through edits with real arrow-key sequences", async (t) => {
+	const mod = await sibling("pi-replay", t);
+	if (!mod) return;
 	const pi = new FakePi();
-	(mod.default as (pi: any) => void)(pi);
+	(mod.default as (pi: any) => any)(pi);
 	const ctx = tuiCtx({
 		sessionManager: {
 			getBranch: () => [
@@ -267,10 +286,11 @@ test("dist replay: steps through edits with real arrow-key sequences", async () 
 // screen-share
 // ---------------------------------------------------------------------------
 
-test("dist screen-share: the transformer masks after the toggle, never user text", async () => {
-	const mod = await import("../../pi-screen-share/dist/index.js");
+test("dist screen-share: the transformer masks after the toggle, never user text", async (t) => {
+	const mod = await sibling("pi-screen-share", t);
+	if (!mod) return;
 	const pi = new FakePi();
-	(mod.default as (pi: any) => void)(pi);
+	(mod.default as (pi: any) => any)(pi);
 	assert.ok(pi.transformer);
 	assert.equal(pi.transformer!("mail a@x.com $500", { messageType: "assistant" }), "mail a@x.com $500", "off by default");
 	await pi.commands[0].def.handler("", tuiCtx());
@@ -284,8 +304,9 @@ test("dist screen-share: the transformer masks after the toggle, never user text
 // cache-clock
 // ---------------------------------------------------------------------------
 
-test("dist cache-clock: response stamps the clock, warm forces the decision, ttl parses", async () => {
-	const mod = await import("../../pi-cache-clock/dist/index.js");
+test("dist cache-clock: response stamps the clock, warm forces the decision, ttl parses", async (t) => {
+	const mod = await sibling("pi-cache-clock", t);
+	if (!mod) return;
 	const pi = new FakePi();
 	const ext = (mod.default as (pi: any) => any)(pi);
 	const ctx = tuiCtx();
